@@ -9,6 +9,8 @@ if (idade >= 18) {
 }
 
 /*
+Alternativa sem biblioteca externa
+
 const readline = require("readline");
 
 const rl = readline.createInterface({
