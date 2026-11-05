@@ -59,12 +59,12 @@ function criarTabuleiro() {
 }
 
 function colorir(carta) {
-  return ${carta.codigo}${carta.simbolo} ${carta.nome}${RESET};
+  return `${carta.codigo}${carta.simbolo} ${carta.nome}${RESET}`;
 }
 
 function mostrarTabuleiro(posicoesTemporarias = []) {
   console.log("\n========== JOGO DA MEMÓRIA ==========");
-  console.log("      1       2       3       4");
+  console.log("       1       2       3       4");
 
   for (let linha = 0; linha < TAMANHO; linha++) {
     let saida = `${linha + 1}  `;
@@ -77,14 +77,14 @@ function mostrarTabuleiro(posicoesTemporarias = []) {
       if (reveladas[linha][coluna] || temporaria) {
         saida += `[${colorir(tabuleiro[linha][coluna])}] `;
       } else {
-        saida += "[  ?  ] ";
+        saida += "[   ?   ] ";
       }
     }
     console.log(saida);
   }
 
   console.log("-------------------------------------");
-  console.log(Tentativas: ${tentativas} | Pares encontrados: ${paresEncontrados}/8);
+  console.log(`Tentativas: ${tentativas} | Pares encontrados: ${paresEncontrados}/8`);
   console.log("=====================================\n");
 }
 
@@ -140,6 +140,7 @@ async function jogar() {
   console.log("Informe primeiro a linha e depois a coluna.");
   console.log("Exemplo: 2 3 significa linha 2, coluna 3.");
 
+  criarTarefa = criarTabuleiro(); // Mantém a chamada correta
   criarTabuleiro();
 
   while (paresEncontrados < CORES.length) {
@@ -165,7 +166,7 @@ async function jogar() {
       reveladas[primeira.linha][primeira.coluna] = true;
       reveladas[segunda.linha][segunda.coluna] = true;
       paresEncontrados++;
-      console.log(${RESET}ACERTO! Par ${carta1.nome} encontrado!);
+      console.log(`ACERTO! Par ${carta1.nome} encontrado!`);
     } else {
       console.log("Não são iguais. Tente memorizar as posições.");
       await perguntar("Pressione ENTER para continuar...");
@@ -175,8 +176,8 @@ async function jogar() {
   mostrarTabuleiro();
   console.log("=====================================");
   console.log("PARABÉNS! VOCÊ ENCONTROU TODOS OS PARES!");
-  console.log(Total de tentativas: ${tentativas});
-  console.log(Total de pares: ${paresEncontrados});
+  console.log(`Total de tentativas: ${tentativas}`);
+  console.log(`Total de pares: ${paresEncontrados}`);
   console.log("=====================================");
   rl.close();
 }
