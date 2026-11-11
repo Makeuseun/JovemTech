@@ -1,3 +1,6 @@
+// Dead by Daylight: Terminal Edition
+// TODO: adicionar novos sobreviventes com novas mecanicas
+
 import * as readline from 'readline';
 
 readline.emitKeypressEvents(process.stdin);
