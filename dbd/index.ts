@@ -1,15 +1,28 @@
 import * as readline from 'readline';
 import { EstadoJogo } from './src/game/EstadoJogo';
-import { Claudette } from './src/characters/Claudette';
 
 readline.emitKeypressEvents(process.stdin);
 if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
 }
 
-const jogo = new EstadoJogo();
+let jogo!: EstadoJogo;
+let emSelecao = true;
 
-function desenharTela() {
+function desenharTelaSelecao() {
+    console.clear();
+    console.log("=== DEAD BY DAYLIGHT: TERMINAL EDITION ===");
+    console.log("");
+    console.log("Escolha seu sobrevivente antes de iniciar:");
+    console.log("");
+    console.log("  [1] Meg  - Sprint Burst: Diminui a velocidade dos assassinos (uso único).");
+    console.log("  [2] Claudette - Botânica: Cura instantânea única por partida e kits recuperam mais vida.");
+    console.log("");
+    console.log("Pressione 1 ou 2 para selecionar. [Q] Sair");
+}
+
+function desenharTelaJogo() {
+    if (!jogo) return;
     console.clear();
     console.log("=== DEAD BY DAYLIGHT: TERMINAL EDITION ===");
     console.log(`Sobrevivente: ${jogo.sobrevivente.nome} | Vida: ❤️ ${jogo.sobrevivente.vida}/100`);
@@ -47,94 +60,57 @@ function desenharTela() {
     console.log("\n[W/A/S/D] Mover | [ESPAÇO] Atacar | [E] Usar Habilidade | [Q] Sair");
 }
 
-process.stdin.on('keypress', (str, key) => {
+function iniciarJogo(tipo: 'meg' | 'claudette') {
+    jogo = new EstadoJogo();
+    jogo.selecionarSobrevivente(tipo);
+    desenharTelaJogo();
+}
+
+function processarTecla(key: any): void {
     if ((key.ctrl && key.name === 'c') || key.name === 'q') {
         process.stdin.setRawMode(false);
         process.exit();
     }
 
-    let acaoRealizada = false;
-    let novoX = jogo.sobrevivente.x;
-    let novoY = jogo.sobrevivente.y;
-
-    if (key.name === 'w') { novoY--; acaoRealizada = true; }
-    if (key.name === 's') { novoY++; acaoRealizada = true; }
-    if (key.name === 'a') { novoX--; acaoRealizada = true; }
-    if (key.name === 'd') { novoX++; acaoRealizada = true; }
-
-    if (key.name === 'e') {
-        acaoRealizada = true;
-        jogo.mensagemStatus = jogo.sobrevivente.usarHabilidade();
+    if (emSelecao) {
+        if (key.name === '1') {
+            emSelecao = false;
+            iniciarJogo('meg');
+        } else if (key.name === '2') {
+            emSelecao = false;
+            iniciarJogo('claudette');
+        }
+        return;
     }
 
-    if (key.name === 'space') {
-        acaoRealizada = true;
-        let acertou = false;
-        jogo.assassinos.forEach(assassino => {
-            if (assassino.ativo && jogo.sobrevivente.atacar(assassino)) {
-                acertou = true;
-                if (assassino.vida <= 0) {
-                    assassino.ativo = false;
-                    jogo.mensagemStatus = `💥 Você destruiu o ${assassino.nome}!`;
-                } else {
-                    jogo.mensagemStatus = `⚔️ Você feriu o ${assassino.nome}! Vida dele: ${assassino.vida}`;
-                }
-            }
-        });
-        if (!acertou) {
-            jogo.mensagemStatus = "Você bateu no ar!";
-        }
+    if (!jogo) return;
+
+    if (key.name === 'w' || key.name === 's' || key.name === 'a' || key.name === 'd') {
+        jogo.moverSobrevivente(key.name);
+    } else if (key.name === 'e') {
+        jogo.mensagemStatus = jogo.usarHabilidadeSobrevivente();
+    } else if (key.name === 'space') {
+        jogo.atacarAssassinos();
     }
 
-    if (acaoRealizada && key.name !== 'space' && key.name !== 'e') {
-        if (novoX >= 0 && novoX < jogo.tamanhoMapa && novoY >= 0 && novoY < jogo.tamanhoMapa) {
-            jogo.sobrevivente.x = novoX;
-            jogo.sobrevivente.y = novoY;
-
-            let genIndex = jogo.geradores.findIndex(g => g.x === jogo.sobrevivente.x && g.y === jogo.sobrevivente.y && g.ativo);
-            if (genIndex !== -1) {
-                jogo.geradores[genIndex].ativo = false;
-                jogo.geradoresRestantes--;
-                jogo.mensagemStatus = `💡 Gerador consertado! Faltam ${jogo.geradoresRestantes}.`;
-                if (jogo.geradoresRestantes === 0) {
-                    console.clear();
-                    console.log("🎉 VITÓRIA! Você consertou todos os geradores e escapou!");
-                    process.exit();
-                }
-            } else {
-                let kitIndex = jogo.kitsCura.findIndex(k => k.x === jogo.sobrevivente.x && k.y === jogo.sobrevivente.y && k.ativo);
-                if (kitIndex !== -1) {
-                    jogo.kitsCura[kitIndex].ativo = false;
-                    const curaQuantidade = jogo.sobrevivente instanceof Claudette ? 50 : 30;
-                    jogo.sobrevivente.vida = Math.min(100, jogo.sobrevivente.vida + curaQuantidade);
-                    jogo.mensagemStatus = `🩹 Kit usado! Vida recuperada (+${curaQuantidade}).`;
-                } else {
-                    jogo.mensagemStatus = "Você se moveu...";
-                }
-            }
-        } else {
-            jogo.mensagemStatus = "Parede invisível!";
-        }
+    // Executar turno dos assassinos após qualquer ação válida
+    if (key.name !== 'q') {
+        jogo.executarTurnoAssassinos();
     }
 
-    jogo.assassinos.forEach(assassino => {
-        if (assassino.ativo) {
-            assassino.perseguir(jogo.sobrevivente.x, jogo.sobrevivente.y, jogo.tamanhoMapa);
+    // Verificar fim de jogo
+    if (jogo.jogoTerminado()) {
+        console.clear();
+        console.log("=== DEAD BY DAYLIGHT: TERMINAL EDITION ===");
+        console.log(jogo.resultadoJogo());
+        process.exit();
+    }
 
-            if (assassino.x === jogo.sobrevivente.x && assassino.y === jogo.sobrevivente.y) {
-                jogo.sobrevivente.vida -= 20;
-                jogo.mensagemStatus = `⚠️ ${assassino.nome} (${assassino.descricaoHabilidade}) te atingiu! (-20 vida)`;
-                
-                if (jogo.sobrevivente.vida <= 0) {
-                    console.clear();
-                    console.log("💀 VOCÊ MORREU!");
-                    process.exit();
-                }
-            }
-        }
-    });
+    desenharTelaJogo();
+}
 
-    desenharTela();
+process.stdin.on('keypress', (_str, key) => {
+    processarTecla(key);
 });
 
-desenharTela();
+desenharTelaSelecao();
