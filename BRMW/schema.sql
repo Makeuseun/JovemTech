@@ -1,8 +1,3 @@
--- =====================================================
--- GESTLUX - SCHEMA INICIAL (SUPABASE / POSTGRES)
--- Execute este arquivo no SQL Editor do seu projeto.
--- =====================================================
-
 create extension if not exists "pgcrypto";
 
 -- -----------------------------------------------------
