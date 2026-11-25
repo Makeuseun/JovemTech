@@ -22,6 +22,7 @@ Projeto de banco de dados para sistema de gestão (estoque, vendas, organizaçõ
 
 ## Links
 
+- [Gestlux](https://gestlux.vercel.app)
 - [BrModeloWeb - Diagrama Lógico](https://app.brmodeloweb.com/publicview/6afeec2a36aee6de5b5d29fd)
 - [BrModeloWeb - Diagrama Conceitual](https://app.brmodeloweb.com/publicview/6aff3e6036aee6de5b5d39f4)
 
